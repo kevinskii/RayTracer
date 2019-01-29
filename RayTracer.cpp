@@ -1,26 +1,13 @@
 // RayTracer.cpp : This file contains the 'main' function. Program execution begins and ends there.
 #include <iostream>
-#include <random>
 #include "pch.h"
 #include "sphere.h"
 #include "hitable_list.h"
 #include "camera.h"
 #include "float.h"
+#include "material.h"
+#include "drand48.h"
 
-// Mimics the drand48() library function in the book that generates a random number in [0,1.0).
-double drand48() {
-	// Ref: http://forums.codeguru.com/showthread.php?525211-How-to-use-drand48()-for-Windows
-	return rand() / (RAND_MAX + 1.0);
-}
-
-// Finds a random point in a sphere with unit radius centered at the origin
-vec3 random_in_unit_sphere() {
-	vec3 p;
-	do {
-		p = 2.0f * vec3(drand48(), drand48(), drand48()) - vec3(1, 1, 1);
-	} while (p.squared_length() >= 1.0f);
-	return p;
-}
 
 vec3 color(const ray& r, hitable *world) {
 	hit_record rec;
@@ -35,7 +22,6 @@ vec3 color(const ray& r, hitable *world) {
 		return (1.0f - t)*vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
 	}
 }
-
 
 int main()
 {
