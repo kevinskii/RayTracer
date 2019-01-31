@@ -1,20 +1,27 @@
 // RayTracer.cpp : This file contains the 'main' function. Program execution begins and ends there.
 #include <iostream>
-#include "pch.h"
 #include "sphere.h"
 #include "hitable_list.h"
 #include "camera.h"
 #include "float.h"
 #include "material.h"
+#include "metal.h"
+#include "lambertian.h"
 #include "drand48.h"
 
 
-vec3 color(const ray& r, hitable *world) {
+vec3 color(const ray& r, hitable *world, int depth) {
 	hit_record rec;
 	// use 0.001f rather than 0.0f for t_min to get rid of the "shadow acne" problem (Ch 7).
 	if (world->hit(r, 0.001f, FLT_MAX, rec)) {
-		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		return 0.5f * color(ray(rec.p, target - rec.p), world);
+		ray scattered;
+		vec3 attenuation;
+		if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+			return attenuation * color(scattered, world, depth + 1);
+		}
+		else {
+			return vec3(0, 0, 0);
+		}
 	}
 	else {
 		vec3 unit_direction = unit_vector(r.direction());
@@ -29,10 +36,12 @@ int main()
 	int ny = 100;
 	int ns = 100;
 	std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-	hitable *list[2];
-	list[0] = new sphere(vec3(0, 0, -1), 0.5f);
-	list[1] = new sphere(vec3(0, -100.5, -1), 100);
-	hitable *world = new hitable_list(list, 2);
+	hitable *list[4];
+	list[0] = new sphere(vec3(0,0,-1), 0.5f, new lambertian(vec3(0.8f,0.3f,0.3f)));
+	list[1] = new sphere(vec3(0,-100.5,-1), 100, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
+	list[2] = new sphere(vec3(1,0,-1), 0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 1.0f));
+	list[3] = new sphere(vec3(-1,0,-1), 0.5f, new metal(vec3(0.8f, 0.8f, 0.8f), 0.3f));
+	hitable *world = new hitable_list(list, 4);
 	camera cam;
 	// From bottom to top
 	for (int j = ny - 1; j >= 0; j--) {
@@ -47,7 +56,7 @@ int main()
 				float u = float(i + drand48()) / float(nx);
 				float v = float(j + drand48()) / float(ny);
 				ray r = cam.get_ray(u, v);
-				col += color(r, world);
+				col += color(r, world, 0);
 			}
 			col /= float(ns);
 
